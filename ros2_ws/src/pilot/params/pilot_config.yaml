@@ -1,0 +1,15 @@
+/**:
+  ros__parameters:
+    motor_inverted: false
+    max_fwd_current: 100
+    max_rev_current: 50
+    max_fwd_rpm: 30000
+    max_rev_rpm: 20000
+    max_left_steering: 0.0
+    max_right_steering: 0.1
+    neutral_steering: 0.5
+
+    js_steering_axis: 2
+    js_throttle_axis: 4
+    js_mode_button: 2
+    js_estop_button: 3
