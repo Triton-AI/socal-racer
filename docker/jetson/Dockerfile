@@ -1,5 +1,5 @@
-FROM nvidiajetson/l4t-ros2-foxy-pytorch:r32.5
-
+# FROM nvidiajetson/l4t-ros2-foxy-pytorch:r32.5
+FROM arm64v8/ros:foxy
 # Essentials
 RUN apt update && apt upgrade -y && rosdep update && \
     apt install -y nano rsync git tio gdb
