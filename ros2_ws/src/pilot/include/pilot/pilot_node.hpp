@@ -23,7 +23,10 @@ namespace pilot{
 
     private:
     // Params
+        bool estopped_;
         bool motor_inverted;
+        bool js_throttle_flipped;
+        bool js_steering_flipped;
         uint32_t max_fwd_current;
         uint32_t max_rev_current;
         uint32_t max_fwd_rpm;
@@ -79,7 +82,7 @@ namespace pilot{
 
         double calcCurrent(const double & raw_throttle);
         double calcSteering(const double & raw_steering);
-        
+        void emergencyStop();
         void cycleMode();
     };
 }

@@ -6,10 +6,12 @@
     max_fwd_rpm: 30000
     max_rev_rpm: 20000
     max_left_steering: 0.0
-    max_right_steering: 0.1
+    max_right_steering: 1.0
     neutral_steering: 0.5
 
-    js_steering_axis: 2
+    js_steering_flipped: true
+    js_throttle_flipped: true
+    js_steering_axis: 0
     js_throttle_axis: 4
-    js_mode_button: 2
-    js_estop_button: 3
+    js_mode_button: 8
+    js_estop_button: 0

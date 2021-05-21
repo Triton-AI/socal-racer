@@ -12,7 +12,7 @@ namespace pilot
 
   PilotNode::PilotNode(const rclcpp::NodeOptions & options)
   : rclcpp::Node("pilot_node", options),
-    mode_(DriveMode::HUMAN)
+    mode_(DriveMode::HUMAN), estopped_(false)
   {
     // Params
     motor_inverted = declare_parameter("motor_inverted").get<bool>();
@@ -28,6 +28,9 @@ namespace pilot
     js_throttle_axis = declare_parameter("js_throttle_axis").get<uint32_t>();
     js_mode_button = declare_parameter("js_mode_button").get<uint32_t>();
     js_estop_button = declare_parameter("js_estop_button").get<uint32_t>();
+
+    js_throttle_flipped = declare_parameter("js_throttle_flipped").get<bool>();
+    js_steering_flipped = declare_parameter("js_steering_flipped").get<bool>();
 
     // Pubs N' Subs
     mode_ser_ = create_service<SetDriveMode>("set_drive_mode", std::bind(&PilotNode::changeDriveMode, this, _1, _2));
@@ -68,7 +71,7 @@ namespace pilot
 
   void PilotNode::commandSpeedCallback(const Float64::SharedPtr speed)
   {
-    if (mode_ == DriveMode::AI)
+    if (mode_ == DriveMode::AI && !estopped_)
     {
       double spd = speed->data;
       auto spd_msg = Float64();
@@ -90,7 +93,7 @@ namespace pilot
 
   void PilotNode::commandThrottleCallback(const Float64::SharedPtr throttle)
   {
-    if (mode_ == DriveMode::AI)
+    if (mode_ == DriveMode::AI && !estopped_)
     {
       auto current_msg = Float64();
       current_msg.data = calcCurrent(throttle->data);
@@ -100,7 +103,9 @@ namespace pilot
 
   void PilotNode::jsCallback(const Joy:: SharedPtr joy)
   {
-    if (mode_ == DriveMode::HUMAN)
+    static bool change_mode_pressed = false;
+
+    if (mode_ == DriveMode::HUMAN && !estopped_)
     {
       auto throttle = joy->axes[js_throttle_axis];
       auto current_msg = Float64();
@@ -110,26 +115,44 @@ namespace pilot
 
     if (mode_ != DriveMode::AI)
     {
+
       auto steering = joy->axes[js_steering_axis];
       auto steering_msg = Float64();
       steering_msg.data = calcSteering((double) steering);
       steering_pub_->publish(steering_msg);
     }
 
+    // press once, change mode once. ignore continue press.
+    if (joy->buttons[js_mode_button])
+    {
+      if (!change_mode_pressed)
+      {
+        cycleMode();
+        change_mode_pressed = true;
+      }
+    }
+    else if (change_mode_pressed)
+    {
+      change_mode_pressed = false;
+    }
 
+    if (joy->buttons[js_estop_button])
+    {
+      emergencyStop();
+    }
   }
 
   double PilotNode::calcCurrent(const double & raw_throttle)
   {
       double thr = clip(raw_throttle, -1.0, 1.0);
       double current = 0.0;
-      if (thr < 0.0) // turn left
+      if ((thr < 0.0 && !js_throttle_flipped) || (thr > 0.0 && js_throttle_flipped)) // backward
       {
-        current = thr * max_rev_current;
+        current = -std::abs(thr) * max_rev_current;
       }
       else //turn right
       {
-        current = thr * max_fwd_current;
+        current = std::abs(thr) * max_fwd_current;
       }
 
       return current;
@@ -138,13 +161,13 @@ namespace pilot
   {
       double str = clip(raw_steering, -1.0, 1.0);
       double real_str = neutral_steering;
-      if (str < 0.0) // turn left
+      if ((!str < 0.0 && !js_steering_flipped) || (str > 0.0 && js_steering_flipped)) // turn left
       {
         real_str = neutral_steering + (max_left_steering - neutral_steering) * std::abs(str);
       }
       else //turn right
       {
-        real_str = neutral_steering + (max_right_steering - neutral_steering) * str;
+        real_str = neutral_steering + (max_right_steering - neutral_steering) * std::abs(str);
       } 
       return real_str;
   }
@@ -157,6 +180,15 @@ namespace pilot
     std::stringstream ss;
     ss << "Pilot: Changed drive mode from " << mode2str.find(lastMode)->second << " to " << mode2str.find(mode_)->second;
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), ss.str());
+  }
+
+  void PilotNode::emergencyStop()
+  {
+    estopped_ = true;
+    auto speed_msg = Float64();
+    speed_msg.data = 0.0;
+    speed_pub_->publish(speed_msg);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Pilot: Emergency Stop!!!");
   }
 
 }
