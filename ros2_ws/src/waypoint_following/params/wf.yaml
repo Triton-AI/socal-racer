@@ -1,0 +1,7 @@
+/**:
+  ros__parameters:
+    speed_k: 5000
+    KP: 0.2
+    KI: 0.02
+    KD: 0.2
+    waypoint_file: "/root/ros2_ws/waypoints.csv"
