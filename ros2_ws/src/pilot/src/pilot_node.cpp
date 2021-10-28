@@ -179,7 +179,7 @@ namespace pilot
     mode_ = (*nextMode.find(mode_)).second;
     std::stringstream ss;
     ss << "Pilot: Changed drive mode from " << mode2str.find(lastMode)->second << " to " << mode2str.find(mode_)->second;
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), ss.str());
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), ss.c_str());
   }
 
   void PilotNode::emergencyStop()
