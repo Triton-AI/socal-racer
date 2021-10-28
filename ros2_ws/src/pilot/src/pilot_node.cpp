@@ -60,9 +60,9 @@ namespace pilot
     }
     else
     {
-      std::stringstream ss;
-      ss << "Pilot: Changed drive mode from " << mode2str.find(mode_)->second << " to " << request->mode;
-      RCLCPP_INFO(rclcpp::get_logger("rclcpp"), ss.str());
+      // std::stringstream ss;
+      // ss << "Pilot: Changed drive mode from " << mode2str.find(mode_)->second << " to " << request->mode;
+      // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), ss.str());
       mode_ = (*md).second;
       response->success = true;
     }
